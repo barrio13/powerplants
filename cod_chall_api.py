@@ -18,7 +18,7 @@ def calcular_produccion(payload):
     fuels = payload["fuels"]
     powerplants = payload["powerplants"]
 
-    
+    # Ponemos la carga de cada planta a 0.
     for plant in powerplants:
         plant["cost"] = calcular_costo(plant, fuels)
         plant["power"] = 0
@@ -30,8 +30,13 @@ def calcular_produccion(payload):
     # Asignar load a las plantas eólicas.
     for plant in powerplants:
         if plant['type'] == 'windturbine':
-            plant['power'] = round((plant['pmax']*fuels['wind(%)'])/100,1)
-        load -= plant['power']
+            power_eol = round((plant['pmax']*fuels['wind(%)'])/100,1)
+            if power_eol > load:
+                plant['power'] = round(load,1)
+                load = 0
+            else:
+                plant['power'] = power_eol
+                load -= plant['power']
 
     
     prev_plant = None
@@ -42,7 +47,7 @@ def calcular_produccion(payload):
             continue
         if load <= 0:
             break
-        if load < plant['pmin']:  
+        if load < plant['pmin']:               # En el caso de que la carga restante sea más pequeña que el pmin, asignamos el pmin y restamos la diferencia a la planta anterior 
             d = plant['pmin'] - load
             plant['power'] = plant['pmin']
             if prev_plant:
